@@ -16,8 +16,8 @@ namespace GreenCoinMovil.Models
         private readonly HttpClient _httpClient;
 
         // Para Android Emulator usa: http://10.0.2.2:8080/api/
-        // Para dispositivo físico usa la IP de tu PC: http://192.168.100.27:8080/api/
-        private const string BaseUrl = "http://192.168.100.27:8080/api/"; // ✅ CAMBIA ESTO
+        // Para dispositivo físico usa la IP de tu PC: http://10.2.14.235:8080/api/
+        private const string BaseUrl = "http://192.168.3.39:8080/api"; // ✅ CAMBIA ESTO
 
         private const string LoginEndpoint = "auth/login";
         private const string RegisterEndpoint = "registro";
@@ -45,6 +45,24 @@ namespace GreenCoinMovil.Models
 
             // ✅ Inicializar sesión si existe
             _ = InitializeSessionAsync();
+        }
+
+        public async Task<bool> EsAdministradorAsync()
+        {
+            try
+            {
+                var email = await SecureStorage.GetAsync("user_email");
+                return email == "admin@gmail.com";
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public async Task<string> ObtenerEmailUsuarioAsync()
+        {
+            return await SecureStorage.GetAsync("user_email");
         }
 
         public async Task<AuthResponse> AttemptLoginAsync(LoginRequest request)
@@ -209,18 +227,20 @@ namespace GreenCoinMovil.Models
         {
             try
             {
-                var userDataJson = JsonSerializer.Serialize(usuario, _jsonOptions);
-                await SecureStorage.SetAsync(UserDataKey, userDataJson);
-                await SecureStorage.SetAsync(AuthTokenKey, token);
+                // Guardar en SecureStorage
+                await SecureStorage.SetAsync("auth_token", token);
+                await SecureStorage.SetAsync("user_email", usuario?.Email ?? string.Empty);
+                await SecureStorage.SetAsync("user_id", usuario?.Id.ToString() ?? string.Empty);
 
-                CurrentUsuario = usuario;
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                // También guardar en Preferences como backup
+                Preferences.Set("auth_token", token);
+                Preferences.Set("user_email", usuario?.Email ?? string.Empty);
 
-                System.Diagnostics.Debug.WriteLine($"💾 Sesión guardada: {usuario?.Email}");
+                System.Diagnostics.Debug.WriteLine($"💾 Sesión guardada - Token: {!string.IsNullOrEmpty(token)}, Email: {usuario?.Email}");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"❌ Error al guardar sesión: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"💥 Error guardando sesión: {ex.Message}");
             }
         }
     }

@@ -45,7 +45,9 @@ namespace GreenCoinMovil.UsuarioDTO
         [JsonPropertyName("puntos")] 
         public int Puntos { get; set; } = 0;
 
-        // Propiedad calculada para mostrar en el Dashboard
-        public string AvatarUrl => AvatarId != null ? $"https://api.dicebear.com/7.x/bottts/svg?seed={AvatarId}" : "placeholder.svg";
+        
+
+        // CORRECCIÓN: Déjalo como una propiedad simple de lectura y escritura
+        public string AvatarUrl { get; set; }
     }
 }
