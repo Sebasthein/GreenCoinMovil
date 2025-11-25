@@ -17,7 +17,7 @@ namespace GreenCoinMovil.Models
 
         // Para Android Emulator usa: http://10.0.2.2:8080/api/
         // Para dispositivo físico usa la IP de tu PC: http://10.2.14.235:8080/api/
-        private const string BaseUrl = "http://192.168.3.39:8080/api"; // ✅ CAMBIA ESTO
+        private const string BaseUrl = "http://10.2.15.144:8080/api"; // ✅ CAMBIA ESTO
 
         private const string LoginEndpoint = "auth/login";
         private const string RegisterEndpoint = "registro";

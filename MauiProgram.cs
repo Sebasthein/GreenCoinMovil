@@ -27,7 +27,7 @@ namespace GreenCoinMovil
             builder.Services.AddSingleton<HttpClient>(serviceProvider =>
             {
                 var client = new HttpClient();
-                client.BaseAddress = new Uri("http://192.168.3.39:8080/api"); // Tu URL real
+                client.BaseAddress = new Uri("http://10.2.15.144:8080/api"); // Tu URL real
                 client.DefaultRequestHeaders.Add("Accept", "application/json");
                 return client;
             });

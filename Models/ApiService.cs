@@ -14,7 +14,7 @@ namespace GreenCoinMovil.Models
     {
       
             private readonly HttpClient _httpClient;
-            private const string BaseUrl = "http://192.168.3.39:8080"; // Para Android Emulator
+            private const string BaseUrl = "http://10.2.15.144:8080"; // Para Android Emulator
 
             public ApiService()
             {
