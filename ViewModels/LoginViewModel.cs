@@ -35,6 +35,12 @@ namespace GreenCoinMovil.ViewModels
         }
 
         [RelayCommand]
+        private async Task IrAlAdmin()
+        {
+            await Shell.Current.GoToAsync(nameof(AdminDashboardPage));
+        }
+
+        [RelayCommand]
         private async Task NavigateToRegister()
         {
             await Shell.Current.GoToAsync("RegisterPage");
@@ -67,13 +73,35 @@ namespace GreenCoinMovil.ViewModels
 
                 if (response.Success)
                 {
-                    System.Diagnostics.Debug.WriteLine("✅✅✅ LOGIN EXITOSO - Navegando al Dashboard...");
+                    System.Diagnostics.Debug.WriteLine("✅✅✅ LOGIN EXITOSO - Verificando token...");
 
-                    // ✅ Limpiar campos
+                    // ✅✅✅ CORRECCIÓN CRÍTICA: Guardar el token manualmente
+                    if (!string.IsNullOrEmpty(response.Token))
+                    {
+                        // Guardar token y email en SecureStorage
+                        await SecureStorage.SetAsync("auth_token", response.Token);
+                        await SecureStorage.SetAsync("user_email", Email);
+
+                        // Verificar que se guardó correctamente
+                        var savedToken = await SecureStorage.GetAsync("auth_token");
+                        var savedEmail = await SecureStorage.GetAsync("user_email");
+
+                        System.Diagnostics.Debug.WriteLine($"✅ Token guardado en SecureStorage: {!string.IsNullOrEmpty(savedToken)}");
+                        System.Diagnostics.Debug.WriteLine($"✅ Email guardado: {savedEmail}");
+                        System.Diagnostics.Debug.WriteLine($"✅ Token length: {savedToken?.Length ?? 0}");
+                        System.Diagnostics.Debug.WriteLine($"✅ Token preview: {savedToken?.Substring(0, Math.Min(20, savedToken.Length))}...");
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine("⚠️ Login exitoso pero token vacío en la respuesta");
+                    }
+
+                    // ✅ Limpiar campos sensibles
                     Email = string.Empty;
                     Password = string.Empty;
 
                     // ✅ Navegación ABSOLUTA al Dashboard
+                    System.Diagnostics.Debug.WriteLine("🚀 Navegando al Dashboard...");
                     await Shell.Current.GoToAsync($"//{nameof(DashboardPage)}");
                 }
                 else
@@ -93,7 +121,6 @@ namespace GreenCoinMovil.ViewModels
                 IsBusy = false;
             }
         }
-
         [RelayCommand]
         private async Task ForgotPassword()
         {

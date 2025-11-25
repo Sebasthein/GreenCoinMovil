@@ -154,7 +154,13 @@
 
                 </StackLayout>
 
+                <Button Text="Entrar como Admin (Test)" 
+        Command="{Binding IrAlAdminCommand}" 
+        BackgroundColor="Black" TextColor="White"/>
+
             </StackLayout>
+            
+            
         </ScrollView>
 
         <!-- Indicador de carga -->
@@ -168,4 +174,6 @@
                            HeightRequest="80"/>
 
     </Grid>
+    
+    
 </ContentPage>

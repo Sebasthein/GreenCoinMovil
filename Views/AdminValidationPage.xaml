@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:GreenCoinMovil.ViewModels"
+             x:Class="GreenCoinMovil.Views.AdminValidationPage"
+            Title="Panel de Administrador"
+             BackgroundColor="#F0F2F5">
+
+    <Grid RowDefinitions="Auto,*">
+        <Frame BackgroundColor="#00b894" Padding="20" CornerRadius="0" HasShadow="False">
+            <Label Text="Validación de Reciclajes" 
+                   TextColor="White" FontSize="20" FontAttributes="Bold" 
+                   HorizontalOptions="Center"/>
+        </Frame>
+
+        <CollectionView Grid.Row="1" ItemsSource="{Binding Pendientes}" Margin="10">
+            <CollectionView.EmptyView>
+                <StackLayout VerticalOptions="Center" HorizontalOptions="Center">
+                    <Label Text="🎉" FontSize="40" HorizontalOptions="Center"/>
+                    <Label Text="No hay validaciones pendientes" TextColor="Gray"/>
+                </StackLayout>
+            </CollectionView.EmptyView>
+
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Frame Margin="0,0,0,15" Padding="0" CornerRadius="15" IsClippedToBounds="True">
+                        <Grid RowDefinitions="200, Auto, Auto">
+
+                            <Image Grid.Row="0" 
+                                   Source="{Binding ImagenUrl}" 
+                                   Aspect="AspectFill"
+                                   BackgroundColor="LightGray"/>
+
+                            <StackLayout Grid.Row="1" Padding="15">
+                                <Label Text="{Binding MaterialNombre}" FontSize="18" FontAttributes="Bold" TextColor="#2d3436"/>
+                                <Label Text="{Binding UsuarioNombre, StringFormat='Usuario: {0}'}" FontSize="14" TextColor="#636e72"/>
+                                <Label Text="{Binding Fecha, StringFormat='📅 {0:dd/MM/yyyy HH:mm}'}" FontSize="12" TextColor="#b2bec3"/>
+
+                                <Label Text="{Binding Observaciones}" 
+                                       IsVisible="{Binding Observaciones, Converter={StaticResource IsNotNullConverter}}"
+                                       FontSize="12" FontAttributes="Italic" TextColor="#0984e3" Margin="0,5,0,0"/>
+                            </StackLayout>
+
+                            <Grid Grid.Row="2" ColumnDefinitions="*,*" Padding="15,0,15,15" ColumnSpacing="10">
+                                <Button Grid.Column="0" 
+                                        Text="❌ Rechazar" 
+                                        BackgroundColor="#ff7675" 
+                                        TextColor="White"
+                                        CornerRadius="8"/>
+
+                                <Button Grid.Column="1" 
+                                        Text="✅ Aprobar" 
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:AdminValidationViewModel}}, Path=AprobarCommand}"
+                                        CommandParameter="{Binding .}"
+                                        BackgroundColor="#00b894" 
+                                        TextColor="White"
+                                        CornerRadius="8"/>
+                            </Grid>
+                        </Grid>
+                    </Frame>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <ActivityIndicator Grid.Row="1" IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}"
+                           HorizontalOptions="Center" VerticalOptions="Center" Color="#00b894"/>
+    </Grid>
+</ContentPage>

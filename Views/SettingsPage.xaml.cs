@@ -2,9 +2,9 @@ using GreenCoinMovil.ViewModels;
 
 namespace GreenCoinMovil.Views;
 
-public partial class AchievementsPage : ContentPage
+public partial class SettingsPage : ContentPage
 {
-    public AchievementsPage(AchievementsViewModel viewModel)
+    public SettingsPage(SettingsViewModel viewModel)
     {
         InitializeComponent();
         BindingContext = viewModel;

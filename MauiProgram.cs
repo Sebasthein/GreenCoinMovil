@@ -2,6 +2,10 @@
 using GreenCoinMovil.ViewModels;
 using GreenCoinMovil.Views;
 using Microsoft.Extensions.Logging;
+using GreenCoinMovil.Service;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Maui.Controls.Hosting;
+
 
 namespace GreenCoinMovil
 {
@@ -17,6 +21,18 @@ namespace GreenCoinMovil
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                     fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
                 });
+
+
+            // ✅ FORMA CORRECTA - HttpClient básico
+            builder.Services.AddSingleton<HttpClient>(serviceProvider =>
+            {
+                var client = new HttpClient();
+                client.BaseAddress = new Uri("http://10.2.15.144:8080/api"); // Tu URL real
+                client.DefaultRequestHeaders.Add("Accept", "application/json");
+                return client;
+            });
+
+            builder.Services.AddSingleton<ApiService>();
             // ✅ REGISTRAR SERVICIOS
             builder.Services.AddSingleton<AuthService>();
 
@@ -24,11 +40,22 @@ namespace GreenCoinMovil
             builder.Services.AddTransient<LoginViewModel>();
             builder.Services.AddTransient<RegisterViewModel>();
             builder.Services.AddTransient<DashboardViewModel>();
+            builder.Services.AddTransient<RecyclingViewModel>();
+            builder.Services.AddTransient<AchievementsViewModel>();
+            builder.Services.AddTransient<SettingsViewModel>();
+            builder.Services.AddTransient<AdminValidationViewModel>();
+            builder.Services.AddTransient<AdminDashboardViewModel>();
+
 
             // ✅ REGISTRAR PÁGINAS
             builder.Services.AddTransient<LoginPage>();
             builder.Services.AddTransient<RegisterPage>();
             builder.Services.AddTransient<DashboardPage>();
+            builder.Services.AddTransient<RecyclePage>();
+            builder.Services.AddTransient<AchievementsPage>();
+            builder.Services.AddTransient<SettingsPage>();
+            builder.Services.AddTransient<AdminValidationPage>();
+            builder.Services.AddTransient<AdminDashboardPage>();
 
 #if DEBUG
             builder.Logging.AddDebug();

@@ -13,11 +13,11 @@
     
     >
 
+    <!-- Páginas de autenticación -->
     <ShellContent
         ContentTemplate="{DataTemplate views:LoginPage}"
         Route="LoginPage"
-        Shell.NavBarIsVisible="False"
-        />
+        Shell.NavBarIsVisible="False" />
 
     <ShellContent Title="Dashboard" 
                   ContentTemplate="{DataTemplate views:DashboardPage}" 
@@ -27,4 +27,42 @@
                   ContentTemplate="{DataTemplate views:RegisterPage}" 
                   Route="RegisterPage" />
 
+    <!-- Navegación por pestañas (solo para usuarios autenticados) -->
+    <TabBar Route="MainTabs">
+        <Tab Title="Perfil">
+            <ShellContent
+                Title="Perfil"
+                ContentTemplate="{DataTemplate views:DashboardPage}"
+                Route="DashboardTab" />
+        </Tab>
+
+        <Tab Title="Reciclaje">
+            <ShellContent
+                Title="Reciclaje"
+                ContentTemplate="{DataTemplate views:RecyclePage}"
+                Route="RecyclingTab" />
+        </Tab>
+
+        <Tab Title="Logros">
+            <ShellContent
+                Title="Logros"
+                ContentTemplate="{DataTemplate views:AchievementsPage}"
+                Route="AchievementsTab" />
+        </Tab>
+
+        <Tab Title="Configuración">
+            <ShellContent
+                Title="Configuración"
+                ContentTemplate="{DataTemplate views:SettingsPage}"
+                Route="SettingsTab" />
+            
+            
+        </Tab>
+        <Tab Title="Admin">
+            <ShellContent
+                Title="Admin"
+                ContentTemplate="{DataTemplate views:AdminDashboardPage}"
+                Route="AdminTab" />
+        </Tab>
+    </TabBar>
 </Shell>

@@ -1,4 +1,5 @@
-﻿using Microsoft.Maui.Controls;
+﻿using GreenCoinMovil.Views;
+using Microsoft.Maui.Controls;
 
 namespace GreenCoinMovil
 {
@@ -16,6 +17,12 @@ namespace GreenCoinMovil
             Routing.RegisterRoute("Dashboard", typeof(Views.DashboardPage));
 
             Routing.RegisterRoute("RegisterPage", typeof(Views.RegisterPage));
+
+            Routing.RegisterRoute("RecyclingPage", typeof(Views.RecyclePage));
+            Routing.RegisterRoute("AchievementsPage", typeof(Views.AchievementsPage));
+            Routing.RegisterRoute("SettingsPage", typeof(Views.SettingsPage));
+            Routing.RegisterRoute("AdminValidationPage", typeof(AdminValidationPage));
+            Routing.RegisterRoute("AdminDashboardPage", typeof(AdminDashboardPage));
 
         }
     }
