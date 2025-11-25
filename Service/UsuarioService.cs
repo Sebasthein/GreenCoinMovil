@@ -12,7 +12,7 @@ namespace GreenCoinMovil.Service
     public class UsuarioService
     {
         // ⚠️ Importante: Usa la IP de tu PC para el emulador de Android (10.0.2.2)
-        private readonly HttpClient _httpClient = new HttpClient { BaseAddress = new Uri("http://localhost:8080") };
+        private readonly HttpClient _httpClient = new HttpClient { BaseAddress = new Uri("http://10.2.14.179:8080") };
         private const string PerfilEndpoint = "/api/usuarios/perfil"; // Tu endpoint GET protegido
 
         // Opcional: Constructor para inyección de dependencias (si lo usas)
