@@ -10,6 +10,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GreenCoinMovil.DTO;
 using GreenCoinMovil.Models; // Asegúrate de que esto apunte a donde está tu ApiService
+using GreenCoinMovil.Views;
 
 namespace GreenCoinMovil.ViewModels
 {
@@ -210,32 +211,13 @@ namespace GreenCoinMovil.ViewModels
         {
             try
             {
-                IsBusy = true;
-                var response = await _httpClient.GetAsync("api/reciclajes/mi-historial");
-
-                if (response.IsSuccessStatusCode)
-                {
-                    var json = await response.Content.ReadAsStringAsync();
-                    var historial = JsonSerializer.Deserialize<List<ReciclajeDTO>>(json,
-                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-                    if (historial != null && historial.Any())
-                    {
-                        await MostrarHistorialDetallado(historial);
-                    }
-                    else
-                    {
-                        await Shell.Current.DisplayAlert("📊 Historial", "No tienes reciclajes registrados.", "OK");
-                    }
-                }
+                Console.WriteLine("📊 Navegando a la página de historial...");
+                await Shell.Current.GoToAsync($"///{nameof(HistoryPage)}");
             }
             catch (Exception ex)
             {
-                await Shell.Current.DisplayAlert("❌ Error", $"Error al cargar historial: {ex.Message}", "OK");
-            }
-            finally
-            {
-                IsBusy = false;
+                Console.WriteLine($"💥 Error navegando al historial: {ex.Message}");
+                await Shell.Current.DisplayAlert("❌ Error", $"Error al abrir el historial: {ex.Message}", "OK");
             }
         }
 
@@ -299,7 +281,7 @@ namespace GreenCoinMovil.ViewModels
                             Id = materialApi.Id,
                             // ✅ CORREGIDO: Usa las propiedades correctas según tu DTO
                             Tipo = materialApi.Nombre ?? "Material",
-                            Puntos = materialApi.PuntosPorUnidad ?? 0, // Ajusta según tu DTO
+                            Puntos = materialApi.PuntosPorUnidad, // Ajusta según tu DTO
                             Icono = ObtenerIconoPorTipo(materialApi.Nombre),
                             Color = ObtenerColorPorTipo(materialApi.Nombre),
                             Descripcion = materialApi.Descripcion ?? "Material reciclable"

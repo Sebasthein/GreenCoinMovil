@@ -10,12 +10,12 @@ namespace GreenCoinMovil.Models
     {
         public long Id { get; set; }
         public string Nombre { get; set; }
-        public string Categoria { get; set; }
+        public Usuario UsuarioCreador { get; set; }
         public string Descripcion { get; set; }
-        public int? PuntosPorUnidad { get; set; }
-        public int? Puntos{ get; set; }
-        public bool? Reciclable { get; set; }
+        public string Categoria { get; set; }
+        public int PuntosPorUnidad { get; set; }
+        public bool Reciclable { get; set; }
         public string CodigoBarra { get; set; }
-        public UsuarioCreador UsuarioCreador { get; set; }
+        public List<Reciclaje> Reciclajes { get; set; }
     }
 }

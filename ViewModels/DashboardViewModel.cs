@@ -77,7 +77,7 @@ namespace GreenCoinMovil.ViewModels
         }
 
         [RelayCommand]
-        private async Task LoadDashboardData()
+        public async Task LoadDashboardData()
         {
             if (IsBusy)
             {
@@ -91,7 +91,13 @@ namespace GreenCoinMovil.ViewModels
             // DEBUG: Verificar estado inicial
             Console.WriteLine("=== DEBUG DASHBOARD ===");
             Console.WriteLine($"IsBusy: {IsBusy}");
+
+            #if MACCATALYST
+            var token = Preferences.Get("auth_token", string.Empty);
+            #else
             var token = await SecureStorage.GetAsync("auth_token");
+            #endif
+
             Console.WriteLine($"Token presente: {!string.IsNullOrEmpty(token)}");
             Console.WriteLine($"Token length: {token?.Length ?? 0}");
             Console.WriteLine($"API Service: {_apiService != null}");
@@ -130,7 +136,12 @@ namespace GreenCoinMovil.ViewModels
                 Console.WriteLine("🔍 Iniciando carga de datos del dashboard...");
 
                 // Verificar token primero
+                #if MACCATALYST
+                var token = Preferences.Get("auth_token", string.Empty);
+                #else
                 var token = await SecureStorage.GetAsync("auth_token");
+                #endif
+
                 if (string.IsNullOrEmpty(token))
                 {
                     Console.WriteLine("❌ No hay token de autenticación");
@@ -190,10 +201,28 @@ namespace GreenCoinMovil.ViewModels
 
         private void InicializarValoresPorDefecto()
         {
-            // Valores por defecto vacíos o neutros en lugar de datos simulados
-            Usuario.Nombre = "Usuario";
-            Usuario.Direccion = "Cargando...";
-            Usuario.AvatarUrl = "https://api.dicebear.com/7.x/bottts/png?seed=default";
+            // Intentar cargar información básica del usuario desde el almacenamiento
+            try
+            {
+                #if MACCATALYST
+                var email = Preferences.Get("user_email", "usuario@ejemplo.com");
+                #else
+                // Para otras plataformas, intentar obtener de forma síncrona (puede no funcionar)
+                var email = "usuario@ejemplo.com"; // Fallback por ahora
+                #endif
+
+                // Extraer nombre del email o usar valor por defecto
+                var nombreBase = email.Split('@')[0];
+                Usuario.Nombre = nombreBase.Length > 0 ? char.ToUpper(nombreBase[0]) + nombreBase.Substring(1) : "Usuario";
+                Usuario.Direccion = "Información pendiente";
+                Usuario.AvatarUrl = $"https://api.dicebear.com/7.x/bottts/png?seed={email}";
+            }
+            catch
+            {
+                Usuario.Nombre = "Usuario";
+                Usuario.Direccion = "Información pendiente";
+                Usuario.AvatarUrl = "https://api.dicebear.com/7.x/bottts/png?seed=default";
+            }
 
             PuntosTotales = 0;
             TotalReciclajes = 0;
@@ -205,8 +234,8 @@ namespace GreenCoinMovil.ViewModels
             ActividadesRecientes = new List<ActividadDTO>();
 
             // Inicializar textos básicos
-            WelcomeMessage = "Cargando tu información...";
-            LogrosTexto = "Obteniendo tus logros...";
+            WelcomeMessage = $"¡Hola {Usuario.Nombre}! Estás contribuyendo a un planeta más verde.";
+            LogrosTexto = "Comienza a reciclar para desbloquear tus primeros logros.";
         }
 
         private string ProcesarAvatarUrl(string url)
@@ -214,7 +243,11 @@ namespace GreenCoinMovil.ViewModels
             if (string.IsNullOrEmpty(url))
             {
                 // Avatar por defecto usando DiceBear
+                #if MACCATALYST
+                var email = Preferences.Get("user_email", "user");
+                #else
                 var email = SecureStorage.GetAsync("user_email").Result ?? "user";
+                #endif
                 return $"https://api.dicebear.com/7.x/bottts/png?seed={email}";
             }
 
@@ -223,7 +256,7 @@ namespace GreenCoinMovil.ViewModels
 
             // Si es local, construir URL completa
             if (url.StartsWith("/uploads/"))
-                return $"http://192.168.3.39:8080{url}";
+                return $"http://192.168.1.8:8080{url}";
 
             return url;
         }
@@ -315,9 +348,14 @@ namespace GreenCoinMovil.ViewModels
 
                 if (!confirmar) return;
 
-                // Limpiar almacenamiento seguro
+                // Limpiar almacenamiento
+                #if MACCATALYST
+                Preferences.Remove("auth_token");
+                Preferences.Remove("user_email");
+                #else
                 SecureStorage.Remove("auth_token");
                 SecureStorage.Remove("user_email");
+                #endif
 
                 // Mostrar mensaje de confirmación
                 await Application.Current.MainPage.DisplayAlert(
@@ -341,20 +379,19 @@ namespace GreenCoinMovil.ViewModels
         {
             try
             {
-                // Verificar en ambos almacenamientos
-                var tokenSecure = await SecureStorage.GetAsync("auth_token");
-                var tokenPreferences = Preferences.Get("auth_token", "");
-
-                var emailSecure = await SecureStorage.GetAsync("user_email");
-                var emailPreferences = Preferences.Get("user_email", "");
-
-                // Usar el token que esté disponible
-                var token = !string.IsNullOrEmpty(tokenSecure) ? tokenSecure : tokenPreferences;
-                var email = !string.IsNullOrEmpty(emailSecure) ? emailSecure : emailPreferences;
-
+                // Verificar en el almacenamiento correcto según la plataforma
+                #if MACCATALYST
+                var token = Preferences.Get("auth_token", "");
+                var email = Preferences.Get("user_email", "");
+                Console.WriteLine("=== VERIFICACIÓN TOKEN DASHBOARD [MACCATALYST] ===");
+                Console.WriteLine($"Token Preferences: {!string.IsNullOrEmpty(token)}");
+                #else
+                var token = await SecureStorage.GetAsync("auth_token");
+                var email = await SecureStorage.GetAsync("user_email");
                 Console.WriteLine("=== VERIFICACIÓN TOKEN DASHBOARD ===");
-                Console.WriteLine($"Token SecureStorage: {!string.IsNullOrEmpty(tokenSecure)}");
-                Console.WriteLine($"Token Preferences: {!string.IsNullOrEmpty(tokenPreferences)}");
+                Console.WriteLine($"Token SecureStorage: {!string.IsNullOrEmpty(token)}");
+                #endif
+
                 Console.WriteLine($"Token final: {!string.IsNullOrEmpty(token)}");
                 Console.WriteLine($"Email: {email}");
                 Console.WriteLine("===================================");
@@ -401,6 +438,16 @@ namespace GreenCoinMovil.ViewModels
     [RelayCommand]
         private async Task DebugStorage()
         {
+            #if MACCATALYST
+            var tokenPrefs = Preferences.Get("auth_token", "");
+            var emailPrefs = Preferences.Get("user_email", "");
+
+            await Shell.Current.DisplayAlert("Debug Storage [MACCATALYST]",
+                $"Preferences Token: {!string.IsNullOrEmpty(tokenPrefs)}\n" +
+                $"Preferences Email: {emailPrefs}\n" +
+                $"Token Preview: {tokenPrefs?.Substring(0, Math.Min(20, tokenPrefs?.Length ?? 0))}...",
+                "OK");
+            #else
             var tokenSecure = await SecureStorage.GetAsync("auth_token");
             var tokenPrefs = Preferences.Get("auth_token", "");
             var emailSecure = await SecureStorage.GetAsync("user_email");
@@ -413,6 +460,7 @@ namespace GreenCoinMovil.ViewModels
                 $"Preferences Email: {emailPrefs}\n" +
                 $"Token Preview: {(tokenSecure ?? tokenPrefs)?.Substring(0, Math.Min(20, (tokenSecure ?? tokenPrefs)?.Length ?? 0))}...",
                 "OK");
+            #endif
         }
     }
 }

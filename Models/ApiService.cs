@@ -1,20 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using GreenCoinMovil.DTO;
+using GreenCoinMovil.Models;
+using Microsoft.Maui.Storage;
+using Microsoft.Maui.Controls;
+using Microsoft.Maui.Dispatching;
 
 namespace GreenCoinMovil.Models
 {
     public class ApiService
     {
-      
+
             private readonly HttpClient _httpClient;
-            private const string BaseUrl = "http://10.2.15.144:8080"; // Para Android Emulator
+            private static string BaseUrl => Environment.GetEnvironmentVariable("API_BASE_URL") ?? "http://10.0.2.2:8080"; // Variable de entorno con fallback
+
+            // Método público para obtener la URL base actual (útil para debugging)
+            public static string GetBaseUrl() => BaseUrl;
 
             public ApiService()
             {
@@ -30,6 +38,9 @@ namespace GreenCoinMovil.Models
                     BaseAddress = new Uri(BaseUrl),
                     Timeout = TimeSpan.FromSeconds(30)
                 };
+
+                // Log para debugging
+                Console.WriteLine($"🚀 ApiService inicializado con BaseUrl: {BaseUrl}");
             }
 
             // 🔐 MÉTODO CRÍTICO: Configurar el token después del login
@@ -49,8 +60,8 @@ namespace GreenCoinMovil.Models
                 await EnsureTokenAsync();
                 Console.WriteLine("📊 Pidiendo datos del Dashboard...");
 
-                // Usamos la ruta correcta sin /api si BaseUrl ya lo tiene
-                var response = await _httpClient.GetAsync("dashboard/datos");
+                // Usamos la ruta correcta con /api para consistencia
+                var response = await _httpClient.GetAsync("/api/dashboard/datos");
 
                 var jsonString = await response.Content.ReadAsStringAsync();
 
@@ -85,77 +96,6 @@ namespace GreenCoinMovil.Models
             }
         }
 
-        // 👤 LOGIN - Para obtener el token
-        public async Task<bool> LoginAsync(string email, string password)
-        {
-            try
-            {
-                Console.WriteLine($"🔐🔐🔐 INICIANDO LOGIN - Email: {email}");
-
-                // Limpiar headers completamente
-                _httpClient.DefaultRequestHeaders.Clear();
-                _httpClient.DefaultRequestHeaders.Authorization = null;
-
-                var loginData = new
-                {
-                    email = email,
-                    password = password
-                };
-
-                Console.WriteLine($"🔐 URL completa: {_httpClient.BaseAddress}/api/auth/login");
-                Console.WriteLine($"🔐 Datos: {System.Text.Json.JsonSerializer.Serialize(loginData)}");
-
-                // 🔥 CAMBIO CRÍTICO: Usar /api/auth/login en lugar de /auth/login
-                var response = await _httpClient.PostAsJsonAsync("/api/auth/login", loginData);
-
-                Console.WriteLine($"🔐 Login Response Status: {response.StatusCode}");
-
-                if (response.IsSuccessStatusCode)
-                {
-                    var content = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine($"✅✅✅ LOGIN EXITOSO - Raw Content: {content}");
-
-                    try
-                    {
-                        var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
-
-                        if (!string.IsNullOrEmpty(result?.Token))
-                        {
-                            Console.WriteLine($"✅✅✅ TOKEN RECIBIDO: {result.Token.Substring(0, Math.Min(20, result.Token.Length))}...");
-                            SetAuthToken(result.Token);
-                            await SecureStorage.SetAsync("auth_token", result.Token);
-                            await SecureStorage.SetAsync("user_email", email);
-                            return true;
-                        }
-                        else
-                        {
-                            Console.WriteLine("❌❌❌ TOKEN ES NULL O VACÍO");
-                            return false;
-                        }
-                    }
-                    catch (System.Text.Json.JsonException jsonEx)
-                    {
-                        Console.WriteLine($"❌❌❌ ERROR PARSEANDO JSON: {jsonEx.Message}");
-                        var rawContent = await response.Content.ReadAsStringAsync();
-                        Console.WriteLine($"📄 Raw Response: {rawContent}");
-                        return false;
-                    }
-                }
-                else
-                {
-                    var errorContent = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine($"❌❌❌ LOGIN FALLIDO: {response.StatusCode}");
-                    Console.WriteLine($"📄 Error Content: {errorContent}");
-                    return false;
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"💥💥💥 EXCEPCIÓN EN LOGIN: {ex.Message}");
-                Console.WriteLine($"💥 Stack trace: {ex.StackTrace}");
-                return false;
-            }
-        }
 
         // 📱 ESCANEAR QR
         public async Task<Material> ScanQRAsync(string qrData)
@@ -197,8 +137,14 @@ namespace GreenCoinMovil.Models
                 Console.WriteLine("🚀 INICIANDO SUBIDA DE FOTO DESDE APISERVICE...");
                 Console.WriteLine($"📦 Datos a enviar - MaterialId: {materialId}, Cantidad: {cantidad}");
 
-                // 1. Obtener el token fresco del almacenamiento seguro
-                var token = await SecureStorage.GetAsync("auth_token");
+                // 1. Obtener el token fresco del almacenamiento
+                string token = null;
+
+                #if MACCATALYST
+                token = Preferences.Get("auth_token", string.Empty);
+                #else
+                token = await SecureStorage.GetAsync("auth_token");
+                #endif
 
                 if (string.IsNullOrEmpty(token))
                 {
@@ -270,7 +216,11 @@ namespace GreenCoinMovil.Models
                     {
                         Console.WriteLine("⚠️ El token venció o es inválido.");
                         // Limpiar token expirado
+                        #if MACCATALYST
+                        Preferences.Remove("auth_token");
+                        #else
                         SecureStorage.Remove("auth_token");
+                        #endif
 
                         // Mostrar alerta en el hilo principal
                         await MainThread.InvokeOnMainThreadAsync(async () =>
@@ -372,10 +322,22 @@ namespace GreenCoinMovil.Models
                 // Si no hay token en los headers, intentar recuperarlo
                 if (_httpClient.DefaultRequestHeaders.Authorization == null)
                 {
-                    var savedToken = await SecureStorage.GetAsync("auth_token");
+                    string savedToken = null;
+
+                    #if MACCATALYST
+                    // Para Mac Catalyst usar Preferences
+                    savedToken = Preferences.Get("auth_token", string.Empty);
+                    Console.WriteLine($"🔄 [MACCATALYST] Recuperando token desde Preferences");
+                    #else
+                    // Para otras plataformas usar SecureStorage
+                    savedToken = await SecureStorage.GetAsync("auth_token");
+                    Console.WriteLine($"🔄 Recuperando token desde SecureStorage");
+                    #endif
+
                     if (!string.IsNullOrEmpty(savedToken))
                     {
                         SetAuthToken(savedToken);
+                        Console.WriteLine($"✅ Token JWT configurado en headers: {savedToken.Substring(0, Math.Min(20, savedToken.Length))}...");
                     }
                     else
                     {
@@ -504,12 +466,324 @@ namespace GreenCoinMovil.Models
         {
             try
             {
-                var email = await SecureStorage.GetAsync("user_email");
+                string email = null;
+
+                #if MACCATALYST
+                email = Preferences.Get("user_email", string.Empty);
+                #else
+                email = await SecureStorage.GetAsync("user_email");
+                #endif
+
                 return email == "admin@gmail.com";
             }
             catch
             {
                 return false;
+            }
+        }
+
+        // 📝 ACTUALIZAR MATERIAL
+        public async Task<Material> ActualizarMaterialAsync(long id, Material material)
+        {
+            try
+            {
+                await EnsureTokenAsync();
+                var response = await _httpClient.PutAsJsonAsync($"/api/materiales/{id}", material);
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.Content.ReadFromJsonAsync<Material>();
+                }
+                else
+                {
+                    throw new Exception($"Error updating material: {response.StatusCode}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"💥 ActualizarMaterial error: {ex.Message}");
+                throw;
+            }
+        }
+
+        // ➕ CREAR MATERIAL
+        public async Task<Material> CrearMaterialAsync(Material material)
+        {
+            try
+            {
+                await EnsureTokenAsync();
+                var response = await _httpClient.PostAsJsonAsync("/api/materiales", material);
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.Content.ReadFromJsonAsync<Material>();
+                }
+                else
+                {
+                    throw new Exception($"Error creating material: {response.StatusCode}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"💥 CrearMaterial error: {ex.Message}");
+                throw;
+            }
+        }
+
+        // 🔍 BUSCAR MATERIAL POR CÓDIGO
+        public async Task<object> BuscarMaterialPorCodigoAsync(object request)
+        {
+            try
+            {
+                await EnsureTokenAsync();
+                var response = await _httpClient.PostAsJsonAsync("/api/materiales/buscar-por-codigo", request);
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.Content.ReadFromJsonAsync<object>();
+                }
+                else
+                {
+                    throw new Exception($"Error searching material by code: {response.StatusCode}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"💥 BuscarMaterialPorCodigo error: {ex.Message}");
+                throw;
+            }
+        }
+
+        // 👤 OBTENER PERFIL DE USUARIO POR ID
+        public async Task<Usuario> ObtenerPerfilUsuarioAsync(long id)
+        {
+            try
+            {
+                await EnsureTokenAsync();
+                var response = await _httpClient.GetAsync($"/api/usuarios/{id}");
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.Content.ReadFromJsonAsync<Usuario>();
+                }
+                else
+                {
+                    throw new Exception($"Error getting user profile: {response.StatusCode}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"💥 ObtenerPerfilUsuario error: {ex.Message}");
+                throw;
+            }
+        }
+
+        // 📋 RECICLAJES POR USUARIO
+        public async Task<object> ObtenerReciclajesPorUsuarioAsync(long usuarioId)
+        {
+            try
+            {
+                Console.WriteLine($"🔍 ApiService: Obteniendo reciclajes para usuario {usuarioId}");
+                await EnsureTokenAsync();
+
+                var url = $"/api/reciclajes/usuario/{usuarioId}";
+                Console.WriteLine($"🌐 ApiService: Llamando a {url}");
+
+                var response = await _httpClient.GetAsync(url);
+                Console.WriteLine($"📡 ApiService: Response status: {response.StatusCode}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var jsonString = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"📦 ApiService: JSON recibido ({jsonString.Length} chars): {jsonString}");
+
+                    // Intentar deserializar como List<ReciclajeDTO>
+                    try
+                    {
+                        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                        var result = JsonSerializer.Deserialize<List<ReciclajeDTO>>(jsonString, options);
+                        Console.WriteLine($"✅ ApiService: Deserializado correctamente - {result?.Count ?? 0} items");
+                        return result;
+                    }
+                    catch (JsonException jsonEx)
+                    {
+                        Console.WriteLine($"💥 ApiService: Error de deserialización JSON: {jsonEx.Message}");
+                        // Retornar el JSON crudo como fallback
+                        return jsonString;
+                    }
+                }
+                else
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"❌ ApiService: Error HTTP {response.StatusCode}: {errorContent}");
+                    throw new Exception($"Error getting recyclings by user: {response.StatusCode} - {errorContent}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"💥 ObtenerReciclajesPorUsuario error: {ex.Message}");
+                throw;
+            }
+        }
+
+        // 📋 TODOS LOS RECICLAJES
+        public async Task<object> ObtenerTodosReciclajesAsync()
+        {
+            try
+            {
+                await EnsureTokenAsync();
+                var response = await _httpClient.GetAsync("/api/reciclajes/todos");
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.Content.ReadFromJsonAsync<object>();
+                }
+                else
+                {
+                    throw new Exception($"Error getting all recyclings: {response.StatusCode}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"💥 ObtenerTodosReciclajes error: {ex.Message}");
+                throw;
+            }
+        }
+
+        // 🔍 BUSCAR MATERIALES POR TIPO
+        public async Task<List<Material>> BuscarMaterialesPorTipoAsync(string tipo)
+        {
+            try
+            {
+                await EnsureTokenAsync();
+                var response = await _httpClient.GetAsync($"/api/materiales/tipo/{tipo}");
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.Content.ReadFromJsonAsync<List<Material>>();
+                }
+                else
+                {
+                    throw new Exception($"Error searching materials by type: {response.StatusCode}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"💥 BuscarMaterialesPorTipo error: {ex.Message}");
+                throw;
+            }
+        }
+
+        // 👤 REGISTRAR USUARIO API
+        public async Task<object> RegistrarUsuarioApiAsync(RegistroRequest request)
+        {
+            try
+            {
+                var response = await _httpClient.PostAsJsonAsync("/api/usuarios/api/registro", request);
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.Content.ReadFromJsonAsync<object>();
+                }
+                else
+                {
+                    throw new Exception($"Error registering user: {response.StatusCode}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"💥 RegistrarUsuarioApi error: {ex.Message}");
+                throw;
+            }
+        }
+
+        // 📝 REGISTRAR RECICLAJE SIMPLE (sin foto)
+        public async Task<object> RegistrarReciclajeSimpleAsync(long materialId, int cantidad = 1)
+        {
+            try
+            {
+                await EnsureTokenAsync();
+                var request = new
+                {
+                    materialId = materialId,
+                    cantidad = cantidad
+                };
+                var response = await _httpClient.PostAsJsonAsync("/api/reciclajes/registrar", request);
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.Content.ReadFromJsonAsync<object>();
+                }
+                else
+                {
+                    throw new Exception($"Error registering recycling: {response.StatusCode}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"💥 RegistrarReciclajeSimple error: {ex.Message}");
+                throw;
+            }
+        }
+
+        // 📱 MIS RECICLAJES
+        public async Task<object> ObtenerMisReciclajesAsync()
+        {
+            try
+            {
+                await EnsureTokenAsync();
+                var response = await _httpClient.GetAsync("/api/reciclajes/mis-reciclajes");
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.Content.ReadFromJsonAsync<object>();
+                }
+                else
+                {
+                    throw new Exception($"Error getting my recyclings: {response.StatusCode}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"💥 ObtenerMisReciclajes error: {ex.Message}");
+                throw;
+            }
+        }
+
+        // 🏆 OBTENER LOGROS
+        public async Task<List<Logro>> ObtenerLogrosAsync()
+        {
+            try
+            {
+                await EnsureTokenAsync();
+                var response = await _httpClient.GetAsync("/api/logros");
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.Content.ReadFromJsonAsync<List<Logro>>();
+                }
+                else
+                {
+                    throw new Exception($"Error getting achievements: {response.StatusCode}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"💥 ObtenerLogros error: {ex.Message}");
+                throw;
+            }
+        }
+
+        // 📊 OBTENER NIVELES
+        public async Task<List<Nivel>> ObtenerNivelesAsync()
+        {
+            try
+            {
+                await EnsureTokenAsync();
+                var response = await _httpClient.GetAsync("/api/niveles");
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.Content.ReadFromJsonAsync<List<Nivel>>();
+                }
+                else
+                {
+                    throw new Exception($"Error getting levels: {response.StatusCode}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"💥 ObtenerNiveles error: {ex.Message}");
+                throw;
             }
         }
 

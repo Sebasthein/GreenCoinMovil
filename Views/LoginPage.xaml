@@ -154,9 +154,31 @@
 
                 </StackLayout>
 
-                <Button Text="Entrar como Admin (Test)" 
-        Command="{Binding IrAlAdminCommand}" 
-        BackgroundColor="Black" TextColor="White"/>
+                <StackLayout Spacing="10">
+                    <Button Text="🔍 Probar Conexión"
+                            Command="{Binding TestConnectionCommand}"
+                            BackgroundColor="#17A2B8"
+                            TextColor="White"
+                            CornerRadius="8"
+                            HeightRequest="40"
+                            FontSize="14"/>
+
+                    <Button Text="🧪 Probar API Completa (Registro + Login + Dashboard + Historial)"
+                            Command="{Binding TestApiFlowCommand}"
+                            BackgroundColor="#FF6B35"
+                            TextColor="White"
+                            CornerRadius="8"
+                            HeightRequest="40"
+                            FontSize="12"/>
+
+                    <Button Text="Entrar como Admin (Test)"
+                            Command="{Binding IrAlAdminCommand}"
+                            BackgroundColor="Black"
+                            TextColor="White"
+                            CornerRadius="8"
+                            HeightRequest="40"
+                            FontSize="14"/>
+                </StackLayout>
 
             </StackLayout>
             

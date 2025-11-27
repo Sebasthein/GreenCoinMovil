@@ -262,10 +262,10 @@
                             </Button>
                         </Grid>
 
-                        <Label Text="* Selecciona un material para enviar" 
-                               IsVisible="{Binding IsMaterialSelected, Converter={StaticResource InvertedBoolConverter}}"
-                               FontSize="10" 
-                               TextColor="Red" 
+                        <Label Text="* Selecciona un material para enviar"
+                               IsVisible="{Binding IsMaterialSelected, Converter={StaticResource InverseBoolConverter}}"
+                               FontSize="10"
+                               TextColor="Red"
                                HorizontalOptions="Center"/>
 
                         <Label Text="{Binding AccionPendiente}"

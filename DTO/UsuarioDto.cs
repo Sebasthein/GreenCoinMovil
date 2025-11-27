@@ -13,8 +13,11 @@ namespace GreenCoinMovil.UsuarioDTO
         [JsonPropertyName("id")]
         public int Id { get; set; }
 
-        [JsonPropertyName("usuarioRolID")] // Si tu API usa este nombre (ej. en la imagen de Postman)
+        [JsonPropertyName("usuarioRolId")] // Campo actualizado según respuesta de registro
         public int? UsuarioRolId { get; set; }
+
+        [JsonPropertyName("rolAsignado")] // Rol asignado al usuario
+        public string RolAsignado { get; set; }
 
         [JsonPropertyName("nombre")]
         public string Nombre { get; set; }

@@ -8,24 +8,13 @@ using System.Windows.Input;
 
 namespace GreenCoinMovil.Models
 {
-    public class RegisterRequest
+    public class RegistroRequest
     {
-        [JsonPropertyName("nombre")]
-        public string Nombre { get; set; }
-
-        [JsonPropertyName("email")]
-        public string Email { get; set; }
-
-        [JsonPropertyName("password")]
-        public string Password { get; set; }
-
-        [JsonPropertyName("telefono")]
-        public string Telefono { get; set; }
-
-        [JsonPropertyName("direccion")]
-        public string Direccion { get; set; }
-
-        [JsonPropertyName("avatarId")]
         public string AvatarId { get; set; }
+        public string Direccion { get; set; }
+        public string Nombre { get; set; }
+        public string Email { get; set; }
+        public string Password { get; set; }
+        public string Telefono { get; set; }
     }
 }

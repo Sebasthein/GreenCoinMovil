@@ -139,7 +139,7 @@ namespace GreenCoinMovil.ViewModels
             }
 
             // Tu IP local - AJUSTA ESTO SEGÚN TU SERVIDOR
-            string baseUrl = "http://192.168.3.39:8080";
+            string baseUrl = "http://192.168.1.8:8080";
 
             // Limpiar la ruta
             string cleanPath = path.Replace("\\", "/").TrimStart('/');

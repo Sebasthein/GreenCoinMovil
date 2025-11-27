@@ -81,7 +81,7 @@ namespace GreenCoinMovil.ViewModels
             {
                 // Extraer solo el nombre del archivo si viene con ruta completa
                 var fileName = Path.GetFileName(path);
-                return $"http://192.168.3.39:8080/uploads/{fileName}";
+                return $"http://192.168.1.8:8080/uploads/{fileName}";
             }
             return path;
         }

@@ -27,20 +27,25 @@ namespace GreenCoinMovil
             builder.Services.AddSingleton<HttpClient>(serviceProvider =>
             {
                 var client = new HttpClient();
-                client.BaseAddress = new Uri("http://10.2.15.144:8080/api"); // Tu URL real
+                client.BaseAddress = new Uri("http://192.168.1.8:8080/api"); // Tu URL real
                 client.DefaultRequestHeaders.Add("Accept", "application/json");
                 return client;
             });
 
             builder.Services.AddSingleton<ApiService>();
             // ✅ REGISTRAR SERVICIOS
-            builder.Services.AddSingleton<AuthService>();
+            builder.Services.AddSingleton<AuthService>(serviceProvider =>
+            {
+                var apiService = serviceProvider.GetRequiredService<ApiService>();
+                return new AuthService(apiService);
+            });
 
             // ✅ REGISTRAR VIEWMODELS
             builder.Services.AddTransient<LoginViewModel>();
             builder.Services.AddTransient<RegisterViewModel>();
             builder.Services.AddTransient<DashboardViewModel>();
             builder.Services.AddTransient<RecyclingViewModel>();
+            builder.Services.AddTransient<HistoryViewModel>();
             builder.Services.AddTransient<AchievementsViewModel>();
             builder.Services.AddTransient<SettingsViewModel>();
             builder.Services.AddTransient<AdminValidationViewModel>();
@@ -52,6 +57,7 @@ namespace GreenCoinMovil
             builder.Services.AddTransient<RegisterPage>();
             builder.Services.AddTransient<DashboardPage>();
             builder.Services.AddTransient<RecyclePage>();
+            builder.Services.AddTransient<HistoryPage>();
             builder.Services.AddTransient<AchievementsPage>();
             builder.Services.AddTransient<SettingsPage>();
             builder.Services.AddTransient<AdminValidationPage>();

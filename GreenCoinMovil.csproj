@@ -42,6 +42,13 @@
 		<Platforms>AnyCPU;x64</Platforms>
 	</PropertyGroup>
 
+	<!-- Disable codesigning for debug builds to avoid extended attributes issues -->
+	<PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+		<CodesignKey></CodesignKey>
+		<CodesignProvision></CodesignProvision>
+		<CodesignEntitlements></CodesignEntitlements>
+	</PropertyGroup>
+
 	<ItemGroup>
 		<!-- App Icon -->
 		<MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#512BD4" />

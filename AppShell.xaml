@@ -23,9 +23,13 @@
                   ContentTemplate="{DataTemplate views:DashboardPage}" 
                   Route="DashboardPage" />
 
-    <ShellContent Title="Registro" 
-                  ContentTemplate="{DataTemplate views:RegisterPage}" 
+    <ShellContent Title="Registro"
+                  ContentTemplate="{DataTemplate views:RegisterPage}"
                   Route="RegisterPage" />
+
+    <ShellContent Title="Historial"
+                  ContentTemplate="{DataTemplate views:HistoryPage}"
+                  Route="HistoryPage" />
 
     <!-- Navegación por pestañas (solo para usuarios autenticados) -->
     <TabBar Route="MainTabs">
